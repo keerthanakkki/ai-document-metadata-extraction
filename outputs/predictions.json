@@ -1,0 +1,46 @@
+[
+  {
+    "filename": "156155545-Rental-Agreement-Kns-Home",
+    "agreement_value": "12000",
+    "agreement_start_date": "15.12.2012",
+    "agreement_end_date": "14.11.2013",
+    "renewal_notice_days": "30",
+    "party_one": "V.K.NATARAJ",
+    "party_two": "SRI VYSHNAVI DAIRY SPECIALITIES Private Ltd.",
+    "_status": "success",
+    "_error": null
+  },
+  {
+    "filename": "228094620-Rental-Agreement",
+    "agreement_value": "15000",
+    "agreement_start_date": "07.07.2013",
+    "agreement_end_date": "06.06.2014",
+    "renewal_notice_days": "30",
+    "party_one": "KAPIL MEHROTRA",
+    "party_two": "B.Kishore",
+    "_status": "success",
+    "_error": null
+  },
+  {
+    "filename": "24158401-Rental-Agreement",
+    "agreement_value": "12000",
+    "agreement_start_date": "01.04.2008",
+    "agreement_end_date": "31.03.2009",
+    "renewal_notice_days": "60",
+    "party_one": "Sri Hanumaiah",
+    "party_two": "Sri Vishal Bhardwaj",
+    "_status": "success",
+    "_error": null
+  },
+  {
+    "filename": "95980236-Rental-Agreement",
+    "agreement_value": "9200",
+    "agreement_start_date": "01.04.2010",
+    "agreement_end_date": "31.03.2011",
+    "renewal_notice_days": "30",
+    "party_one": "S.Sakunthala",
+    "party_two": "V. Ravi Kian",
+    "_status": "success",
+    "_error": null
+  }
+]

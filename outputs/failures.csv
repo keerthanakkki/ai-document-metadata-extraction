@@ -1,0 +1,7 @@
+filename,field,expected,predicted,normalized_match
+24158401-Rental-Agreement,party_one,Hanumaiah,Sri Hanumaiah,True
+24158401-Rental-Agreement,party_two,Vishal Bhardwaj,Sri Vishal Bhardwaj,True
+95980236-Rental-Agreement,agreement_value,9000,9200,False
+95980236-Rental-Agreement,party_two,V.V.Ravi Kian,V. Ravi Kian,False
+156155545-Rental-Agreement-Kns-Home,party_two,VYSHNAVI DAIRY SPECIALITIES Private Ltd,SRI VYSHNAVI DAIRY SPECIALITIES Private Ltd.,True
+228094620-Rental-Agreement,party_two,.B.Kishore,B.Kishore,True

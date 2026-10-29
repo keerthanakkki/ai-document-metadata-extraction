@@ -1,0 +1,251 @@
+{
+  "micro_averaged_recall": 75.0,
+  "total_exact_matches": 18,
+  "total_ground_truth_values": 24,
+  "field_recalls": [
+    {
+      "field": "agreement_value",
+      "exact_matches": 3,
+      "total_ground_truth": 4,
+      "recall_pct": 75.0
+    },
+    {
+      "field": "agreement_start_date",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "agreement_end_date",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "renewal_notice_days",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "party_one",
+      "exact_matches": 3,
+      "total_ground_truth": 4,
+      "recall_pct": 75.0
+    },
+    {
+      "field": "party_two",
+      "exact_matches": 0,
+      "total_ground_truth": 4,
+      "recall_pct": 0.0
+    }
+  ],
+  "overlapping_filenames": [
+    "24158401-Rental-Agreement"
+  ],
+  "overlap_warning": "WARNING: 1 filename(s) appear in both the training and test datasets: ['24158401-Rental-Agreement']. The reported recall score may be optimistic for these documents because the model's few-shot examples include their ground-truth labels from train.csv. These results should be interpreted with caution.",
+  "per_document": [
+    {
+      "filename": "24158401-Rental-Agreement",
+      "agreement_value": {
+        "expected": "12000",
+        "predicted": "12000",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_start_date": {
+        "expected": "01.04.2008",
+        "predicted": "01.04.2008",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_end_date": {
+        "expected": "31.03.2009",
+        "predicted": "31.03.2009",
+        "match": true,
+        "normalized_match": true
+      },
+      "renewal_notice_days": {
+        "expected": "60",
+        "predicted": "60",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_one": {
+        "expected": "Hanumaiah",
+        "predicted": "Sri Hanumaiah",
+        "match": false,
+        "normalized_match": true
+      },
+      "party_two": {
+        "expected": "Vishal Bhardwaj",
+        "predicted": "Sri Vishal Bhardwaj",
+        "match": false,
+        "normalized_match": true
+      }
+    },
+    {
+      "filename": "95980236-Rental-Agreement",
+      "agreement_value": {
+        "expected": "9000",
+        "predicted": "9200",
+        "match": false,
+        "normalized_match": false
+      },
+      "agreement_start_date": {
+        "expected": "01.04.2010",
+        "predicted": "01.04.2010",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_end_date": {
+        "expected": "31.03.2011",
+        "predicted": "31.03.2011",
+        "match": true,
+        "normalized_match": true
+      },
+      "renewal_notice_days": {
+        "expected": "30",
+        "predicted": "30",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_one": {
+        "expected": "S.Sakunthala",
+        "predicted": "S.Sakunthala",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_two": {
+        "expected": "V.V.Ravi Kian",
+        "predicted": "V. Ravi Kian",
+        "match": false,
+        "normalized_match": false
+      }
+    },
+    {
+      "filename": "156155545-Rental-Agreement-Kns-Home",
+      "agreement_value": {
+        "expected": "12000",
+        "predicted": "12000",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_start_date": {
+        "expected": "15.12.2012",
+        "predicted": "15.12.2012",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_end_date": {
+        "expected": "14.11.2013",
+        "predicted": "14.11.2013",
+        "match": true,
+        "normalized_match": true
+      },
+      "renewal_notice_days": {
+        "expected": "30",
+        "predicted": "30",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_one": {
+        "expected": "V.K.NATARAJ",
+        "predicted": "V.K.NATARAJ",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_two": {
+        "expected": "VYSHNAVI DAIRY SPECIALITIES Private Ltd",
+        "predicted": "SRI VYSHNAVI DAIRY SPECIALITIES Private Ltd.",
+        "match": false,
+        "normalized_match": true
+      }
+    },
+    {
+      "filename": "228094620-Rental-Agreement",
+      "agreement_value": {
+        "expected": "15000",
+        "predicted": "15000",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_start_date": {
+        "expected": "07.07.2013",
+        "predicted": "07.07.2013",
+        "match": true,
+        "normalized_match": true
+      },
+      "agreement_end_date": {
+        "expected": "06.06.2014",
+        "predicted": "06.06.2014",
+        "match": true,
+        "normalized_match": true
+      },
+      "renewal_notice_days": {
+        "expected": "30",
+        "predicted": "30",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_one": {
+        "expected": "KAPIL MEHROTRA",
+        "predicted": "KAPIL MEHROTRA",
+        "match": true,
+        "normalized_match": true
+      },
+      "party_two": {
+        "expected": ".B.Kishore",
+        "predicted": "B.Kishore",
+        "match": false,
+        "normalized_match": true
+      }
+    }
+  ],
+  "comparison_policy": "Exact match after stripping leading/trailing whitespace. Case, punctuation, date formats, and currency are NOT normalised so that meaningful differences are not hidden. Secondary normalized metrics strip salutations/honorifics and corporate representation clauses.",
+  "expected_test_documents": 4,
+  "successfully_processed": 4,
+  "failed_processing": 0,
+  "missing_files": [],
+  "duplicate_files": [],
+  "normalized_micro_averaged_recall": 91.67,
+  "normalized_field_recalls": [
+    {
+      "field": "agreement_value",
+      "exact_matches": 3,
+      "total_ground_truth": 4,
+      "recall_pct": 75.0
+    },
+    {
+      "field": "agreement_start_date",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "agreement_end_date",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "renewal_notice_days",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "party_one",
+      "exact_matches": 4,
+      "total_ground_truth": 4,
+      "recall_pct": 100.0
+    },
+    {
+      "field": "party_two",
+      "exact_matches": 3,
+      "total_ground_truth": 4,
+      "recall_pct": 75.0
+    }
+  ],
+  "processing_time_statistics": null
+}

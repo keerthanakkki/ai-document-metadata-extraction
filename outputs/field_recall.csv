@@ -1,0 +1,7 @@
+field,exact_matches,total_ground_truth,recall_pct
+agreement_value,3,4,75.0
+agreement_start_date,4,4,100.0
+agreement_end_date,4,4,100.0
+renewal_notice_days,4,4,100.0
+party_one,3,4,75.0
+party_two,0,4,0.0
