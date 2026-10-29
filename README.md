@@ -1,454 +1,306 @@
-# AI/ML-Based Document Metadata Extraction System
+# AI-Based Document Metadata Extraction System
 
-> Automatically extract structured rental-agreement metadata from DOCX files and scanned images using **EasyOCR** + **Ollama LLM** — with zero hardcoded rules.
+An AI-powered document processing system that extracts important metadata from rental agreements and other documents using OCR and Large Language Models (LLMs). The application supports Word documents and scanned images, provides a web interface, and includes evaluation scripts for measuring extraction performance.
 
----
+## 1. Project Overview
 
-## Table of Contents
+Manually extracting information from agreements can be time-consuming and error-prone. This project automates the process by accepting a document, extracting its text, and identifying important metadata using an LLM.
 
-1. [Project Overview](#project-overview)
-2. [Problem Statement](#problem-statement)
-3. [Input & Output Formats](#input--output-formats)
-4. [System Architecture](#system-architecture)
-5. [Technology Stack & Justifications](#technology-stack--justifications)
-6. [OCR vs Semantic Extraction](#ocr-vs-semantic-extraction)
-7. [Few-Shot Learning](#few-shot-learning)
-8. [Installation & Setup (Windows PowerShell)](#installation--setup-windows-powershell)
-9. [Running the Application](#running-the-application)
-10. [API Endpoints & Examples](#api-endpoints--examples)
-11. [Dataset Description](#dataset-description)
-12. [Evaluation Methodology & Results](#evaluation-methodology--results)
-13. [Per-Field Recall Table](#per-field-recall-table)
-14. [Project Structure](#project-structure)
-15. [Known Limitations & Improvements](#known-limitations--improvements)
-16. [Privacy & Security Considerations](#privacy--security-considerations)
+### Key Features
 
----
+- Supports `.docx`, `.png`, `.jpg`, and `.jpeg` files.
+- Extracts text from Word documents using `python-docx`.
+- Uses EasyOCR to extract text from scanned images.
+- Uses Ollama with the Qwen2.5 7B language model for metadata extraction.
+- Extracts six metadata fields:
+  - Agreement Value
+  - Agreement Start Date
+  - Agreement End Date
+  - Renewal Notice Period (Days)
+  - Party One
+  - Party Two
+- Provides a Streamlit interface for uploading and processing documents.
+- Provides a FastAPI backend with API documentation.
+- Includes dataset inspection, evaluation, and automated tests.
 
-## Project Overview
+## 2. Technology Stack
 
-This system accepts a rental/lease agreement document (DOCX or scanned image) and extracts six metadata fields using a two-stage AI pipeline:
-
-1. **Text Extraction** — python-docx (DOCX) or EasyOCR (images)
-2. **Semantic Extraction** — a pretrained LLM (via Ollama) interprets the text and returns structured JSON
-
-No regular expressions, keyword lookups, or hardcoded templates are used to identify field values.
-
----
-
-## Problem Statement
-
-Rental agreements arrive in varied formats, layouts and languages. Manually reading each document to populate a metadata database is slow and error-prone. This system automates that extraction with an LLM that understands meaning, context and role labels — not just pattern positions.
-
-**Six fields extracted:**
-
-| Field | Description |
+| Component | Technology |
 |---|---|
-| `agreement_value` | Monthly rent / total agreement value (numeric, no currency symbol) |
-| `agreement_start_date` | Commencement date as written in the document |
-| `agreement_end_date` | Expiry date as written in the document |
-| `renewal_notice_days` | Days of advance notice required for renewal/termination |
-| `party_one` | Landlord / Lessor / First Party full name |
-| `party_two` | Tenant / Lessee / Second Party full name |
+| Programming Language | Python |
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Language Model | Ollama — Qwen2.5 7B |
+| OCR | EasyOCR |
+| Word Document Processing | python-docx |
+| Data Processing | Pandas |
+| API Validation | Pydantic |
+| Evaluation | Python scripts and CSV datasets |
 
----
+## 3. Project Structure
 
-## Input & Output Formats
-
-**Input:** DOCX, PNG, JPG, JPEG (max 20 MB per file by default)
-
-**Output (JSON):**
-```json
-{
-  "filename": "example.docx",
-  "extraction": {
-    "agreement_value": "6500",
-    "agreement_start_date": "20.05.2007",
-    "agreement_end_date": "20.05.2008",
-    "renewal_notice_days": 15,
-    "party_one": "Antonio Levy S. Ingles, Jr. and/or Mary Rose C. Ingles",
-    "party_two": "GERALDINE Q. GALINATO",
-    "status": "success",
-    "field_details": {
-      "agreement_value": {
-        "value": "6500",
-        "confidence_score": 0.95,
-        "confidence_level": "high",
-        "evidence": "monthly rent of Rs. 6500",
-        "is_missing": false
-      }
-    }
-  }
-}
+```text
+ai-document-metadata-extraction/
+├── app/                  # Backend and extraction logic
+├── frontend/             # Streamlit user interface
+├── data/                 # Training and testing datasets
+│   ├── train.csv
+│   └── test.csv
+├── scripts/              # Evaluation and dataset inspection
+├── tests/                # Automated tests
+├── outputs/               # Generated outputs, if configured
+├── .env.example           # Example environment configuration
+├── .gitignore
+├── requirements.txt
+├── pytest.ini
+├── assignment-details.pdf
+└── README.md
 ```
 
----
+## 4. Prerequisites
 
-## System Architecture
+Install the following before running the project:
 
-```mermaid
-flowchart TD
-    A[User / Streamlit UI] -->|Upload file| B[FastAPI /extract]
-    B --> C{File type?}
-    C -->|DOCX| D[python-docx\nText Extraction]
-    C -->|PNG/JPG| E[EasyOCR\nText Extraction]
-    D --> F[Document Text]
-    E --> F
-    F --> G[Few-Shot Builder\ntrain.csv + train docs]
-    G --> H[Ollama LLM\nSemantic Extraction]
-    H --> I[Pydantic\nValidation]
-    I --> J[ExtractionResult JSON]
-    J --> A
+1. **Python 3.10 or later:** https://www.python.org/downloads/
+2. **Git:** https://git-scm.com/downloads
+3. **Ollama:** https://ollama.com/
 
-    subgraph Evaluation
-      K[test/ documents] --> L[Extraction Pipeline]
-      L --> M[predictions.csv/json]
-      M --> N[Load test.csv labels]
-      N --> O[Compute Recall]
-      O --> P[evaluation_report.json]
-    end
-```
+During Python installation, enable **Add Python to PATH** if the installer offers that option.
 
-### Pipeline Stages
+Verify the installations in PowerShell:
 
-| Stage | Module | Description |
-|---|---|---|
-| A | `file_validation.py` | Extension, size, magic-byte checks |
-| B | `document_reader.py` / `ocr_service.py` | Text extraction |
-| C | `llm_service.py` | Semantic extraction via Ollama |
-| D | `extraction_service.py` | Few-shot example injection |
-| E | `schemas.py` | Pydantic output validation |
-
----
-
-## Technology Stack & Justifications
-
-| Technology | Role | Justification |
-|---|---|---|
-| **FastAPI** | REST API | Async, auto-docs (Swagger), Pydantic-native |
-| **Streamlit** | UI | Rapid data-app UI, Python-native |
-| **python-docx** | DOCX reading | Reliable paragraph/table access |
-| **EasyOCR** | Image OCR | GPU-optional, multi-language, good rotation tolerance |
-| **Ollama** | LLM inference | Local, private, model-swappable |
-| **Qwen2.5:7b** | Extraction model | Instruction-following, multilingual, compact |
-| **Pydantic v2** | Schema validation | Fast, strict, excellent error messages |
-| **Pandas** | CSV / metrics | Industry-standard data manipulation |
-| **Pytest** | Testing | Parametrize, fixtures, mocking |
-| **Uvicorn** | ASGI server | Production-grade, used with FastAPI |
-
----
-
-## OCR vs Semantic Extraction
-
-| Stage | Technology | Purpose |
-|---|---|---|
-| **OCR** | EasyOCR | Converts image pixels → raw text. Has no understanding of meaning. |
-| **Semantic Extraction** | Ollama LLM | Reads the text and understands context, roles, and field semantics. |
-
-These stages are deliberately separated so each can be improved independently. OCR quality directly affects LLM accuracy — low-quality scans produce noisy text.
-
----
-
-## Few-Shot Learning
-
-The system reads `data/train.csv` and the corresponding training documents at startup to build a set of worked examples. These are prepended to each LLM prompt so the model sees concrete input/output pairs before the actual document.
-
-**Configuration:**
-```env
-FEW_SHOT_ENABLED=true
-FEW_SHOT_MAX_EXAMPLES=3
-```
-
-**Important constraints enforced:**
-- Only training data is used — `test.csv` is never touched during prediction
-- Examples are truncated to 1500 characters to keep prompts manageable
-- The raw ground-truth answers are NOT hardcoded; they come from CSV lookup and document text extraction
-
----
-
-## Installation & Setup (Windows PowerShell)
-
-### 1. Create and activate a virtual environment
 ```powershell
-cd "d:\ai assignment AIML"
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-```
-
-### 2. Install Python dependencies
-```powershell
-pip install -r requirements.txt
-```
-
-### 3. Install Ollama
-Download from https://ollama.com and run the installer, then verify:
-```powershell
+python --version
+git --version
 ollama --version
 ```
 
-### 4. Download the language model
+## 5. Installation and Setup (Windows)
+
+### Step 1: Clone the repository
+
+Open PowerShell and run:
+
+```powershell
+git clone https://github.com/keerthanakkki/ai-document-metadata-extraction.git
+cd ai-document-metadata-extraction
+```
+
+All remaining commands should be executed from this project directory unless stated otherwise.
+
+### Step 2: Create a virtual environment
+
+```powershell
+python -m venv venv
+```
+
+Activate it:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation because of the execution policy, use Command Prompt and run:
+
+```cmd
+venv\Scripts\activate.bat
+```
+
+### Step 3: Install Python dependencies
+
+With the virtual environment activated, run:
+
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+### Step 4: Download the language model
+
+Download the default model:
+
 ```powershell
 ollama pull qwen2.5:7b
 ```
-> Alternative lighter models: `ollama pull llama3.2:3b` or `ollama pull phi3:mini`
 
-### 5. Configure environment (optional)
+Verify that the model is available:
+
 ```powershell
-Copy-Item .env.example .env
-# Edit .env to change model name, thresholds, etc.
+ollama list
 ```
 
----
+**Note:** The Qwen2.5 7B model requires sufficient RAM and disk space. Processing speed depends on the computer's hardware. The first run may take longer while the model loads.
 
-## Running the Application
+If you use a different model, make sure its name matches the model configured in the application. Alternative models may produce different extraction results.
 
-### Terminal 1 — Start Ollama (if not already running as a service)
+### Step 5: Configure environment variables
+
+The project includes an example configuration file named `.env.example`.
+
+To create a local environment file, run:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` only if you need to change the model or other supported configuration settings.
+
+If the project works with the default configuration, no additional changes may be necessary. Keep local secrets and machine-specific settings out of GitHub.
+
+## 6. Running the Application
+
+Keep the virtual environment activated in each terminal where you run the project.
+
+### Terminal 1: Start Ollama
+
+Ollama normally runs in the background after installation. If it is already running, skip this step.
+
+Otherwise, open a terminal and run:
+
 ```powershell
 ollama serve
 ```
 
-### Terminal 2 — Start FastAPI backend
+Leave the terminal running.
+
+### Terminal 2: Start the FastAPI backend
+
+Open a second PowerShell terminal:
+
 ```powershell
-cd "d:\ai assignment AIML"
+cd ai-document-metadata-extraction
 .\venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### Terminal 3 — Start Streamlit frontend
+If the repository was cloned into a different directory, navigate to that directory instead.
+
+The backend should be available at:
+
+- API: http://127.0.0.1:8000
+- Interactive API documentation: http://127.0.0.1:8000/docs
+
+### Terminal 3: Start the Streamlit frontend
+
+Open a third PowerShell terminal:
+
 ```powershell
-cd "d:\ai assignment AIML"
+cd ai-document-metadata-extraction
 .\venv\Scripts\Activate.ps1
-streamlit run frontend/streamlit_app.py
+python -m streamlit run frontend/streamlit_app.py
 ```
 
-Then open:
-- **UI:** http://localhost:8501
-- **API docs:** http://localhost:8000/docs
+Open the URL displayed in the terminal, usually:
 
-### Run the evaluation script
-```powershell
-cd "d:\ai assignment AIML"
-.\venv\Scripts\Activate.ps1
-python scripts/evaluate.py
-```
+**http://localhost:8501**
 
-### Run dataset inspection
+You can now use the web interface to upload a supported document and view the extracted metadata.
+
+## 7. API Endpoints
+
+The FastAPI backend exposes the following endpoints:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Check backend health |
+| `POST /extract` | Extract metadata from a document |
+| `POST /extract/batch` | Process multiple documents |
+
+Visit http://127.0.0.1:8000/docs to inspect the available request formats, parameters, and responses.
+
+## 8. Dataset and Evaluation
+
+The project includes CSV datasets for training examples and evaluation.
+
+- `data/train.csv` contains training examples that can be used as extraction context.
+- `data/test.csv` contains examples used for evaluation.
+
+The test dataset should not be used as input context during prediction, as this could make evaluation results misleading.
+
+### Inspect the dataset
+
+From the project root, run:
+
 ```powershell
 python scripts/inspect_dataset.py
 ```
 
-### Run the test suite
+### Run evaluation
+
 ```powershell
-pytest tests/ -v
+python scripts/evaluate.py
 ```
 
----
+The evaluation script uses the project's configured dataset and extraction pipeline. Check the generated output and terminal results to review the predictions and evaluation metrics.
 
-## API Endpoints & Examples
+**Evaluation note:** Training and test data should contain separate documents. If the same document appears in both datasets, the evaluation may overestimate generalization. Check for overlapping document names before interpreting the results.
 
-### GET /health
+## 9. Run Automated Tests
+
+From the project root, with the virtual environment activated:
+
 ```powershell
-curl http://localhost:8000/health
-```
-**Response:**
-```json
-{
-  "status": "ok",
-  "api_version": "1.0.0",
-  "model": "qwen2.5:7b",
-  "model_available": true,
-  "model_error": null
-}
+python -m pytest tests/ -v
 ```
 
-### POST /extract (single file)
+Review the test output to confirm which tests passed or failed. Test results may depend on the current code, installed dependencies, and test configuration.
+
+## 10. Troubleshooting
+
+### Error: `ModuleNotFoundError: No module named 'app'`
+
+Make sure you are in the repository root, where the `app` directory is located, before starting the backend.
+
+### Error: Ollama connection refused
+
+Check that Ollama is installed and running. Start it with `ollama serve` if necessary, and verify that the configured model is available using `ollama list`.
+
+### Error: Model not found
+
+Pull the configured model:
+
 ```powershell
-curl -X POST http://localhost:8000/extract `
-  -F "file=@data/test/156155545-Rental-Agreement-Kns-Home.pdf.docx"
-```
-**Response:**
-```json
-{
-  "filename": "156155545-Rental-Agreement-Kns-Home.pdf.docx",
-  "extraction": {
-    "agreement_value": "12000",
-    "agreement_start_date": "15.12.2012",
-    "agreement_end_date": "14.11.2013",
-    "renewal_notice_days": 30,
-    "party_one": "V.K.NATARAJ",
-    "party_two": "VYSHNAVI DAIRY SPECIALITIES Private Ltd",
-    "status": "success",
-    "field_details": { "...": "..." }
-  }
-}
+ollama pull qwen2.5:7b
 ```
 
-### POST /extract/batch
+If your application uses a different model name, download that model instead.
+
+### Error: Python module not found
+
+Activate the virtual environment and reinstall the dependencies:
+
 ```powershell
-curl -X POST http://localhost:8000/extract/batch `
-  -F "files=@data/test/156155545-Rental-Agreement-Kns-Home.pdf.docx" `
-  -F "files=@data/test/24158401-Rental-Agreement.png"
+.\venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-### GET /docs
-Visit http://localhost:8000/docs for the interactive Swagger UI.
+### Extraction is slow
 
----
+OCR and local LLM inference can take time, particularly on computers without a suitable GPU. Allow the model to load and finish processing before retrying. Performance depends on document size, hardware, and model configuration.
 
-## Dataset Description
+### Frontend cannot connect to the backend
 
-| Split | Documents | Labels |
-|---|---|---|
-| Training | 10 files (7 DOCX, 3 PNG) | 10 labeled rows in `train.csv` |
-| Test | 4 files (2 DOCX, 2 PNG) | 4 labeled rows in `test.csv` |
+Make sure the FastAPI backend is running and that the frontend is configured to use the correct backend address.
 
-**⚠️ Known Train/Test Overlap:**
+## 11. Limitations
 
-`24158401-Rental-Agreement` appears in **both** `train.csv` and `test.csv`. The test-split image (`data/test/24158401-Rental-Agreement.png`) is the same document as the training entry. This means:
-- The few-shot examples may contain ground-truth labels for this test document
-- Evaluation recall for this document may be inflated
-- This overlap is detected and reported automatically by the evaluation script
+- Extraction accuracy depends on document quality, OCR quality, model behavior, and document formatting.
+- Scanned images may take longer to process than text-based Word documents.
+- Local LLM inference requires sufficient system resources.
+- Extracted metadata should be reviewed before being used for legal, financial, or other important decisions.
+- Evaluation results depend on the size and quality of the available dataset.
 
----
+## 12. Future Enhancements
 
-## Evaluation Methodology & Results
+- Support for additional document formats, including PDF.
+- Improved confidence scoring and evidence highlighting.
+- Better handling of conflicting values and ambiguous dates.
+- Larger and more diverse evaluation datasets.
+- Performance optimization for local inference.
 
-**Comparison policy:** Exact string match after stripping leading/trailing whitespace. Case, punctuation, date formats and currency symbols are **not** normalised, so meaningful differences are not silently hidden.
+## 13. Author
 
-**Recall formula:**
+**Keerthana K.**
 
-```
-Recall (field) = exact_matches / total_non_null_ground_truth_values × 100
-Micro-recall   = Σ exact_matches (all fields) / Σ total_GT (all fields) × 100
-```
 
-Missing ground-truth values (null in test.csv) are excluded from both numerator and denominator.
 
----
-
-## Instructions to Run the Code and Replicate Predictions
-
-To reproduce the exact predictions and recall metrics:
-
-1. **Ensure Ollama is running with the configured model**:
-   ```powershell
-   ollama serve
-   ollama pull qwen2.5:7b
-   ```
-
-2. **Run the evaluation pipeline**:
-   ```powershell
-   python scripts/evaluate.py
-   ```
-   This script:
-   - Reads test documents directly from `data/test/`
-   - Generates predictions via the real extraction pipeline without reading `test.csv` labels
-   - Saves predictions to `outputs/predictions.csv` and `outputs/predictions.json`
-   - Loads ground-truth labels from `data/test.csv` and computes per-field exact-match and normalized recall metrics
-   - Writes the detailed evaluation report to `outputs/evaluation_report.json` and `outputs/field_recall.csv`
-
----
-
-## Predictions for Files in the Test Set (`data/test/`)
-
-Generated by running `python scripts/evaluate.py`:
-
-| Document Filename | Agreement Value | Start Date | End Date | Notice Days | Party One (Landlord) | Party Two (Tenant) |
-|---|---|---|---|---|---|---|
-| `156155545-Rental-Agreement-Kns-Home.pdf.docx` | `12000` | `15.12.2012` | `14.11.2013` | `30` | `V.K.NATARAJ` | `SRI VYSHNAVI DAIRY SPECIALITIES Private Ltd.` |
-| `228094620-Rental-Agreement.pdf.docx` | `15000` | `07.07.2013` | `06.06.2014` | `30` | `KAPIL MEHROTRA` | `B.Kishore` |
-| `24158401-Rental-Agreement.png` | `12000` | `01.04.2008` | `31.03.2009` | `60` | `Sri Hanumaiah` | `Sri Vishal Bhardwaj` |
-| `95980236-Rental-Agreement.png` | `9200` | `01.04.2010` | `31.03.2011` | `30` | `S.Sakunthala` | `V. Ravi Kian` |
-
----
-
-## Per-Field Recall Table
-
-Official evaluation results against `data/test.csv` (Total ground truth fields: 24 across 4 test documents):
-
-| Field | Exact Matches | Total GT | Exact Recall % | Normalized Recall % |
-|---|---|---|---|---|
-| **agreement_value** | 3 | 4 | **75.0%** | 75.0% |
-| **agreement_start_date** | 4 | 4 | **100.0%** | 100.0% |
-| **agreement_end_date** | 4 | 4 | **100.0%** | 100.0% |
-| **renewal_notice_days** | 4 | 4 | **100.0%** | 100.0% |
-| **party_one** | 3 | 4 | **75.0%** | 100.0% |
-| **party_two** | 0 | 4 | **0.0%** | 75.0% |
-| **Exact-Match Micro-Averaged** | **18** | **24** | **75.0%** | — |
-| **Secondary Normalized Micro-Averaged** | **22** | **24** | — | **91.7%** |
-
-> **Notes on Metrics:**
-> - `agreement_start_date`, `agreement_end_date`, and `renewal_notice_days` achieved **100% exact match** across all test documents.
-> - `agreement_value`: In `95980236-Rental-Agreement.png`, the numeric rent is Rs. 9,000 but the words state "Nine thousand and two hundred rupees only". Per legal agreement policy, written words take priority, returning `9200` with flagged confidence.
-> - `party_two`: Ground truth in `test.csv` uses `.B.Kishore` (leading dot typo) and `VYSHNAVI DAIRY SPECIALITIES Private Ltd` without prefix. The normalized recall (stripping punctuation/honorifics) is **91.7%**.
-
----
-
-## Project Structure
-
-```
-project/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              ← FastAPI app factory
-│   ├── config.py            ← pydantic-settings configuration
-│   ├── schemas.py           ← all Pydantic models
-│   ├── api/
-│   │   └── routes.py        ← /health, /extract, /extract/batch
-│   ├── services/
-│   │   ├── document_reader.py   ← DOCX text extraction
-│   │   ├── ocr_service.py       ← EasyOCR image extraction
-│   │   ├── llm_service.py       ← Ollama LLM calls + prompt
-│   │   ├── extraction_service.py← pipeline orchestrator
-│   │   └── evaluation_service.py← recall metrics
-│   └── utils/
-│       └── file_validation.py   ← upload validation
-├── frontend/
-│   └── streamlit_app.py     ← Streamlit UI
-├── scripts/
-│   ├── evaluate.py          ← batch evaluation pipeline
-│   └── inspect_dataset.py   ← dataset summary utility
-├── tests/
-│   ├── conftest.py
-│   ├── test_document_reader.py
-│   ├── test_schemas.py
-│   ├── test_api.py
-│   └── test_evaluation.py
-├── data/
-│   ├── train/               ← training documents
-│   ├── test/                ← test documents
-│   ├── train.csv
-│   └── test.csv
-├── outputs/                 ← generated by evaluate.py
-├── .env.example
-├── .gitignore
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Known Limitations & Improvements
-
-| Limitation | Potential Improvement |
-|---|---|
-| OCR quality depends on scan resolution | Pre-processing (deskew, contrast) with OpenCV |
-| LLM may misidentify party roles in unusual layouts | Fine-tune on domain-specific labeled data |
-| Evaluation uses exact-match (strict) | Add fuzzy matching (e.g., Levenshtein) for partial credit |
-| Few-shot examples may exceed context window for large docs | Dynamic example selection by document similarity |
-| No PDF support | Add `pymupdf` or `pdfplumber` for native PDF text extraction |
-| Train/test overlap affects reported recall | Exclude overlapping docs from evaluation or report separately |
-| EasyOCR initialisation is slow (~10–30 s on first call) | Pre-warm the reader at startup |
-
----
-
-## Privacy & Security Considerations
-
-| Concern | Mitigation |
-|---|---|
-| Sensitive contract data | All processing is local (Ollama runs on-device) — no data sent to external APIs |
-| Prompt injection from documents | System prompt is fixed; document text is in the user turn only; no instruction execution |
-| Uploaded file execution | Files are written to temp storage and read as bytes only — never executed |
-| Magic-byte validation | Prevents disguised malicious files from bypassing extension checks |
-| Temp file cleanup | `contextmanager` ensures temp files are always deleted after processing |
-| No secrets in code | All credentials in `.env` (excluded from git via `.gitignore`) |
